@@ -21,3 +21,72 @@ In the following examples, we’ll explore deserialization issues, why they exis
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+* An Introduction To Deserialization in PHP
+------------------------------------------- 
+In this lesson, we’ll be using the programming language, PHP, to demonstrate the issue of deserialization.
+
+In programming, serialization is taking some type of data, such as an object, and converting it to an easily transferable data stream. By doing this, we can take something as complex as 
+the state of an application, serialize it, and be left with a smaller, easier-to-transfer data stream. This data stream can then be moved around an application, where it can eventually be 
+deserialized. Once deserialized, the transferred data is converted back to its original state.
+
+For example, the following code demonstrates how we can serialize the object called $our_object using the PHP serialize() function:
+
+	class Serialized {
+    		public $x = "test";
+    		public $y = "data";
+	}
+
+	$our_object = new Serialized();
+
+By using the PHP serialize() function, we converted $our_object to a transferable format which resulted in the following output:
+
+O:10:"Serialized":2:{s:1:"x";s:4:"test";s:1:"y";s:4:"data";}
+
+Now on its own, serialization and deserialization may not seem too risky, and in some cases, it’s not. The issues associated with deserialization occur when we use “Magic Methods” with 
+dangerous functions.
+
+Within PHP, a handful of methods are built into all classes, user-defined and system-defined. These methods have special meaning and purpose, known as Magic Methods. We recommend 
+reviewing the PHP documentation if you want to learn more about these methods.
+
+While these methods help developers save resources and processing time, a handful are incredibly useful when combined with dangerous function calls when working with deserialization. For 
+example, the __wakeup() call will automatically execute when an object is deserialized.
+
+If a __wakeup() function contains dangerous function calls, such as an operating system exec() call, a crafted serialized object can execute arbitrary code once a serialized object is 
+deserialized!
+
+Take, for example, the code in the editor. Review the code and search the web to identify why the code in the editor is vulnerable. Once finished with your investigation, go to the next 
+exercise, where we will discuss the vulnerability of the code.
+
+app.php
+-------
+<?php
+	class Change_color
+	{
+		private $color;
+
+		function __wakeup(){
+			echo '<body style="background-color:' . $this->color . '">';
+		}
+	}
+
+
+	$deserial_content = $_GET['color'];
+	unserialize($deserial_content);
+
+	echo "Welcome to Our Registration Page!";
+	echo "<br>";
+	echo "Come back after our security assessment for more information!";
+
+	//Remove this class before the security assessment!
+	class Debug_class_remove_from_prod
+	{
+		private $hook;   
+		 
+		function __wakeup(){
+			system($this->hook);
+		}
+	}
+?>
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
