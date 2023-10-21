@@ -1,0 +1,23 @@
+# SOFTWARE AND DATA INTEGRITY FAILURES
+--------------------------------------
+
+* Introduction
+--------------
+Modern software rarely exists in a bubble. It is a collaboration between many developers, systems, and data sources, all working together in a carefully orchestrated design to achieve 
+some common goal. In this day and age, systems must be built lightweight, fast, and stable. To achieve this, many developers look to third-party libraries, outsourcing certain components 
+and ensuring their code operates in a specific format to allow quick modification.
+
+With the inclusion of all these components, software and data integrity failures have become an unfortunate reality. When we pull in third-party libraries and modules, we introduce new 
+risks. What if the module contains unknown malicious code? What if a module is breached and unauthorized code changes are pushed? What if the developers cut support for a project and new 
+vulnerabilities are later found?
+
+Similar issues arise when components are outsourced. What happens if a third-party hoster is breached? How will we, as developers, know that our data is leaked? Who will be responsible 
+for these cases?
+
+These questions are hard to answer but can be reviewed following OWASP’s Software and Data Integrity failure category. While some issues, like third-party risk, require a combination of 
+code and policy protections, others (i.e., risks associated with the deserialization of untrusted data) can be handled by developers.
+
+In the following examples, we’ll explore deserialization issues, why they exist, how we can exploit them, and how we can look to prevent them.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
